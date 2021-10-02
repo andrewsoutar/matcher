@@ -102,7 +102,7 @@
                                   ,@(make-keyword-matcher key-args list-remaining
                                                           `(collect ,collector (pop ,list-remaining)))
                                   (setq ,list-remaining (collect ,collector))))
-                             (funcall next-fun)))))
+                             (return-from key-arg (funcall next-fun))))))
                (destructuring-bind (kv-pattern &rest init-form-stuff) (ensure-cons (pop pattern))
                  (multiple-value-bind (keyword subpattern)
                      (etypecase kv-pattern
@@ -121,7 +121,9 @@
   (etypecase pattern
     ((eql t)
      (unless value-safe-p
-       (collect *actions* value)))
+       ;; Wrap in a progn, in case value is a symbol and will end up
+       ;; inside a tagbody
+       (collect *actions* `(progn ,value))))
     ((or null number keyword (cons (eql quote)))
      (collect *actions* `(unless (eql ,pattern ,value) ,*fail*)))
     (string
