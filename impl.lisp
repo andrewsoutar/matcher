@@ -61,7 +61,8 @@
                                                                    initialized-p)
                                       t)))))
                      (collect key-args-collector)))
-          ,no-match-form))))
+          ,no-match-form)
+        ,loop-end)))
 
 (defun compile-cons (pattern list-remaining)
   (labels ((dispatch (default)
@@ -147,6 +148,7 @@
 (defun build-matcher-form (body)
   `(let ,(collect *temporaries*)
      (labels ,(collect *helpers*)
+       ,@(collect *actions*)
        (let* ,(collect *bindings*)
          (declare (ignore ,@(collect *ignored-bindings*)))
          ,@body))))
