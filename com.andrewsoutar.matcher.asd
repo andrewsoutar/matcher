@@ -1,4 +1,4 @@
 (asdf:defsystem #:com.andrewsoutar.matcher
   :defsystem-depends-on (:uiop)
   :class :package-inferred-system
-  :depend-on (#:com.andrewsoutar.matcher/matcher))
+  :depends-on (#:com.andrewsoutar.matcher/main))
