@@ -62,6 +62,7 @@
                                       t)))))
                      (collect key-args-collector)))
           ,no-match-form)
+        (go ,loop-head)
         ,loop-end)))
 
 (defun compile-cons (pattern list-remaining)
