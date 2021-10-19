@@ -5,18 +5,16 @@
 (cl:in-package #:com.andrewsoutar.matcher/main)
 
 (defmacro match-let* ((&rest bindings) &body body)
-  (let ((match-let*-block (gensym "MATCH-LET*")))
-    `(block ,match-let*-block
-       ,(with-matcher-env
-          (dolist (binding bindings)
-            (multiple-value-bind (actions bindings)
-                (with-collectors (*actions* *bindings*)
-                  (destructuring-bind (pattern value) binding
-                    (compile-pattern pattern value `(return-from ,match-let*-block)))
-                  (values *actions* *bindings*))
-              (compile-run-with-bindings (collect actions))
-              (collect-all *bindings* bindings)))
-          (build-matcher-form body)))))
+  (with-matcher-env
+    (dolist (binding bindings)
+      (multiple-value-bind (actions bindings)
+          (with-collectors (*actions* *bindings*)
+            (destructuring-bind (pattern value) binding
+              (compile-pattern pattern value `(error "Match failure")))
+            (values *actions* *bindings*))
+        (compile-run-with-bindings (collect actions))
+        (collect-all *bindings* bindings)))
+    (build-matcher-form body)))
 
 (defmacro match-case (form &body cases)
   (let ((form-var (gensym "FORM"))
