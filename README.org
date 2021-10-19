@@ -1,0 +1,86 @@
+#+STARTUP: indent
+
+* com.andrewsoutar.matcher :: simple structural pattern-matching for Common Lisp
+This package provides a few high-level forms that utilize the pattern matcher:
+
+- ~(match-let* ((pattern1 value1) (pattern2 value2) ...) &body forms)~
+  Sequentially matches each pattern to its respective value, then
+  evaluates the forms. If any of the matches fail, an error is
+  signaled.
+- ~(match-case value (pattern1 form1) (pattern2 form2) ...)~
+  Tries to match ~value~ against each pattern. When the first one
+  matches, evaluates the corresponding form. If no patterns match,
+  returns ~nil~.
+- ~(match-ecase value (pattern1 form1) (pattern2 form2) ...)~
+  Just like ~match-case~, but throws an error if the value doesn't
+  match any pattern.
+** Types of patterns
+- ~nil~, numbers, keywords, and quoted values match themselves with ~eql~
+- Literal strings match themselves with ~equal~
+- The symbol ~t~ matches any value
+- Symbols match any value, and are bound to the matched value inside
+  the form that corresponds to the pattern
+- Cons cells match cons cells, and the match proceeds recursively
+- ~&optional opt1 opt2 ...~ matches like ~&optional~ in a
+  lambda-list. All forms until the next ~&symbol~ are considered to be
+  optional parameters; if any remaining values in the list continue to
+  be matched by further list patterns. ~&optional~ supports the
+  following syntax:
+  - ~&optional sym~ binds the symbol ~sym~ to the value (if present)
+  - ~&optional (pattern init-form present-p)~ matches the pattern
+    ~pattern~ against the value (if present), or the value of
+    ~init-form~ (if the value is not present). ~present-p~ is set to
+    ~t~ if the value was provided, or ~nil~ if not. Both ~init-form~
+    and ~present-p~ are optional.
+- ~&rest pattern~ matches ~pattern~ against the remaining elements of
+  the list (or its dotted tail). All values remain to be matched by
+  further patterns, allowing you to do ~&rest foo &key bar baz~ like
+  you can with normal lambda-lists. ~pattern~ is optional; if it's
+  omitted, a bare ~&rest~ means that any remaining elements are
+  ignored.
+- ~(&key key1 key2 ...)~ matches keyword arguments, like regular
+  ~&key~. Any unmatched arguments can be matched by further forms;
+  this means that you can do, for instance, ~&key a b &rest
+  other-keys~ to pick off keyword arguments; remaining keywords will
+  end up in ~other-keys~. (Note that this is DIFFERENT than ~&rest
+  other-keys &key a b~; in that case, the keyword arguments will still
+  be a part of ~other-keys~.) This also means that ~&allow-other-keys~
+  is unnecessary; instead, simply use ~(&key a b &rest)~. ~&key~
+  supports the following syntax:
+  - ~&key var~ matches ~:var~, and binds its value to the symbol ~var~
+  - ~&key (var init-form present-p)~ works like the ~init-form~ and
+    ~present-p~ and ~&optional~. As with ~&optional~, they may be
+    omitted.
+  - ~&key ((keyword pattern) init-form present-p)~ uses ~keyword~ as
+    the keyword, and matches the value against ~pattern~. ~init-form~
+    and ~present-p~ are like above and are optional. ~keyword~ does
+    not need to be a keyword, but will be tested with ~eql~.
+** Matching specifics
+Any init-forms do not begin to be evaluated until the entire rest of
+the pattern is matched. Any prior variables will be lexically bound
+when the init-forms are evaluated. If any init-form fails to match,
+the pattern does not match.
+** Special matchers
+~com.andrewsoutar.matcher/matchers~ contains several "special
+matchers". If one of these appears as the head of a list, that calls
+the special matcher. This can be easily used by doing something like:
+#+begin_src common-lisp
+  (uiop:add-package-local-nickname '#:m '#:com.andrewsoutar.matcher/matchers)
+#+end_src
+Matchers include:
+- ~(m:and pattern1 pattern2 ...)~ matches if all included patterns
+  match. This is useful for giving a sub-part of a pattern a name: you
+  can do ~(m:and sub-value-var pattern-to-match)~ and ~sub-value-var~
+  will be bound to the matched value.
+- ~(m:or pattern1 pattern2 ...)~ matches if any included pattern
+  matches. Only variables from the matched pattern will be bound.
+- ~(m:type some-type)~ matches values of type ~some-type~.
+- ~(m:satisfies fun)~ matches when ~(funcall fun value)~ is truthy.
+- ~(m:call fun arg1 arg2 ...)~ matches when ~(fun arg1 arg2
+  ... value)~ is truthy.
+- ~(m:eq thing)~ matches when ~(eq thing value)~. Likewise with
+  ~m:eql~, ~m:equal~, ~m:equalp~, and ~m:string=~.
+Note that matchers are not protected from signaling errors; this is
+important for matchers like ~m:satisfies~, ~m:call~, and
+~m:string=~. If an error is thrown, it will be propagated instead of
+simply triggering a match failure.
