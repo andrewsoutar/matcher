@@ -128,7 +128,7 @@
     ((or null number keyword (cons (eql quote)))
      (collect *actions* `(unless (eql ,pattern ,value) ,*fail*)))
     (string
-     (collect *actions* `(unless (string= ,pattern ,value) ,*fail*)))
+     (collect *actions* `(unless (equal ,pattern ,value) ,*fail*)))
     (symbol
      (let ((temp (gensym* "TEMP-" pattern)))
        (collect *temporaries* temp)
