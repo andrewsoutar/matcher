@@ -33,7 +33,7 @@
           (unless initialized-p-var
             (setf initialized-p-var (gensym "INITIALIZED-P"))
             (collect *temporaries* initialized-p-var))
-          (compile-run-with-bindings `(unless ,initialized-p-var (,submatch ,init-form)))
+          (compile-run-with-bindings `((unless ,initialized-p-var (,submatch ,init-form))))
           (with-collectors (*actions*)
             (%compile-pattern pattern submatch-value t)
             (collect *helpers* `(,submatch (,submatch-value) ,@(collect *actions*))))
