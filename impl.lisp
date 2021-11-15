@@ -25,7 +25,7 @@
     (collect *ignored-bindings* ignored)
     ignored))
 
-(defun compile-init-form-pattern (pattern init-form-stuff value &optional initialized-p-var)
+(defun compile-init-form-pattern (pattern init-form-stuff value &key initialized-p-var value-safe-p)
   (destructuring-bind (&optional (init-form nil init-form-p) (supplied-p nil supplied-p-p)) init-form-stuff
     (if init-form-p
         (let ((submatch (gensym "SUBMATCH"))
@@ -41,7 +41,7 @@
           `((setq ,initialized-p-var t) (,submatch ,value)))
         (with-collectors (*actions*)
           (when initialized-p-var (collect *actions* `(setq ,initialized-p-var t)))
-          (%compile-pattern pattern value)
+          (%compile-pattern pattern value value-safe-p)
           (collect *actions*)))))
 
 (defun make-keyword-matcher (key-args-collector list-remaining no-match-form)
@@ -58,7 +58,7 @@
                                     (unless ,initialized-p
                                       (pop ,list-remaining) ; pop keyword itself
                                       ,@(compile-init-form-pattern subpattern init-form-stuff `(pop ,list-remaining)
-                                                                   initialized-p)
+                                                                   :initialized-p-var initialized-p)
                                       t)))))
                      (collect key-args-collector)))
           ,no-match-form)
