@@ -113,7 +113,7 @@
            (rest-arg ()
              (%compile-pattern (pop pattern) list-remaining t)
              (when pattern (funcall (dispatch #'required-arg))))
-           (end-rest () (%compile-pattern pattern list-remaining t)) 
+           (end-rest () (%compile-pattern pattern list-remaining t))
           (end-ignore ())
            (end-null () (end-rest)))
     (funcall (dispatch #'required-arg))))
